@@ -47,6 +47,13 @@
 
   - `.42`: `JSON5Number(source=".42", value=0.42)`
 
+- booleans:
+
+  - `true`: `Json5Boolean(value=True)`
+  - `false`: `Json5Boolean(value=False)`
+
+- null: `Json5Null()`
+
 - values:
 
   Stores all JSON types, and their leading and trailing whitespace. Also stores
@@ -54,7 +61,7 @@
 
   ```python
   JSON5Value(
-    value: Union[None, bool, JSON5String, JSON5Number, JSON5Array, JSON5Object],
+    data: Union[Json5Null, Json5Boolean, JSON5String, JSON5Number, JSON5Array, JSON5Object],
     whitespace_before: str = '',
     whitespace_after: str = '',
     trailing_comma: bool = True,
