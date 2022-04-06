@@ -4,7 +4,7 @@ from __future__ import annotations
 import string
 from typing import Literal, Sequence, cast
 
-from json5_rt.nodes import Json5Number, Json5Object, Json5String, Json5Value
+from json5_rt.nodes import Json5Data, Json5Number, Json5String, Json5Value
 
 
 class Json5ParseError(Exception):
@@ -79,7 +79,7 @@ class Json5Parser:
 
         return False
 
-    def parse(self) -> Json5Object:
+    def parse(self) -> Json5Value:
         """Scans the source to produce a JSON5 CST."""
         value = self.parse_value()
 
@@ -90,7 +90,7 @@ class Json5Parser:
 
         return value
 
-    def parse_value(self) -> Json5Object:
+    def parse_value(self) -> Json5Value:
         """Parse a JSON5 value with whitespace information."""
         # Step 1: Read left whitespace
         while self.peek() in string.whitespace:
@@ -109,11 +109,11 @@ class Json5Parser:
         # Step 4: Make the value
         whitespace_before = self.source[self.start : self.whitespace_left]
         whitespace_after = self.source[self.whitespace_right : self.current]
-        value = Json5Object(json_data, whitespace_before, whitespace_after)
+        value = Json5Value(json_data, whitespace_before, whitespace_after)
 
         return value
 
-    def parse_data(self) -> Json5Value:
+    def parse_data(self) -> Json5Data:
         if self.match_next(('"', "'")):
             # TODO: can remove once mypy has better type narrowing
             # ref: https://github.com/python/mypy/issues/12535
@@ -195,5 +195,5 @@ class Json5Parser:
         return Json5Number(source, value=float(source))
 
 
-def parse(source: str) -> Json5Object:
+def parse(source: str) -> Json5Value:
     return Json5Parser(source).parse()
