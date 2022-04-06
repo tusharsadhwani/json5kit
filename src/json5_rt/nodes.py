@@ -10,16 +10,6 @@ class Json5Data:
 
 
 @dataclass
-class Json5Value:
-    data: Json5Data
-    whitespace_before: str
-    whitespace_after: str
-
-    def to_json5(self) -> str:
-        return self.whitespace_before + self.data.source + self.whitespace_after
-
-
-@dataclass
 class Json5String(Json5Data):
     value: str
     quotes: Literal['"', "'"]
@@ -28,3 +18,13 @@ class Json5String(Json5Data):
 @dataclass
 class Json5Number(Json5Data):
     value: float
+
+
+@dataclass
+class Json5Value:
+    data: Json5Data
+    whitespace_before: str
+    whitespace_after: str
+
+    def to_json5(self) -> str:
+        return self.whitespace_before + self.data.source + self.whitespace_after
