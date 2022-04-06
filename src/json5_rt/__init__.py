@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import string
-from typing import Sequence
+from typing import Literal, Sequence, cast
 
 from json5_rt.nodes import Json5Number, Json5Object, Json5String, Json5Value
 
@@ -115,7 +115,9 @@ class Json5Parser:
 
     def parse_data(self) -> Json5Value:
         if self.match_next(('"', "'")):
-            quote_char = self.previous()
+            # TODO: can remove once mypy has better type narrowing
+            # ref: https://github.com/python/mypy/issues/12535
+            quote_char = cast(Literal['"', "'"], self.previous())
             return self.parse_string(quote_char)
 
         # TODO: leading decimal?
@@ -135,7 +137,7 @@ class Json5Parser:
     #     while not self.scanned and (self.peek().isalnum() or self.peek() == "_"):
     #         self.advance()
 
-    def parse_string(self, quote_char: str) -> Json5String:
+    def parse_string(self, quote_char: Literal["'", '"']) -> Json5String:
         # TODO: this is probably not all escapes
         unescaped_chars = []
         while not self.scanned:
