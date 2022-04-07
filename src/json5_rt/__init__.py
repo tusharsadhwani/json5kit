@@ -1,4 +1,4 @@
-"""json5-rt - A roundtrip parser for json5."""
+"""json5-rt - A roundtrip parser for JSON5."""
 from __future__ import annotations
 
 import string
@@ -8,7 +8,7 @@ from json5_rt.nodes import Json5Data, Json5Number, Json5String, Json5Value
 
 
 class Json5ParseError(Exception):
-    """Raised when the json5 string has bad syntax."""
+    """Raised when the JSON5 string has bad syntax."""
 
     def __init__(self, message: str, index: int) -> None:
         super().__init__(message)
@@ -16,7 +16,7 @@ class Json5ParseError(Exception):
 
 
 class Json5Parser:
-    """Parser that converts a json5 string into a CST."""
+    """Parser that converts a JSON5 string into a CST."""
 
     def __init__(self, source: str) -> None:
         self.source = source

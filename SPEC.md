@@ -226,7 +226,7 @@
 
 - Notes:
 
-  - Parsing a usual json5 source currently would return a `JSON5Value` which
+  - Parsing a usual JSON5 source currently would return a `JSON5Value` which
     wraps a `JSON5Object`. Maybe I should subclass `JSON5Value` to `JSON5Module`
     just to have a top level object storing leading and trailing whitespace.
     Also, leading comments in file.

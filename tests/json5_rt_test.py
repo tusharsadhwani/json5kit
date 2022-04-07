@@ -17,5 +17,5 @@ import json5_rt
     ),
 )
 def test_json5_roundtrip(source: str) -> None:
-    """Tests if a json5 snippet can be parsed and roundtripped."""
+    """Tests if a JSON5 snippet can be parsed and roundtripped."""
     assert json5_rt.parse(source).to_json5() == source
