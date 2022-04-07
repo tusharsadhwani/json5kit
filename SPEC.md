@@ -64,8 +64,7 @@
     data: Union[Json5Null, Json5Boolean, JSON5String, JSON5Number, JSON5Array, JSON5Object],
     whitespace_before: str = '',
     whitespace_after: str = '',
-    trailing_comma: bool = True,
-    whitespace_after_trailing_comma: str = '',
+    trailing_comment: Optional[str] = None,
   )
   ```
 
@@ -80,9 +79,9 @@
   ```python
   JSON5ArrayMember(
     value: JSON5Value,
+    comma: bool,
     trailing_comment: Optional[JSON5Comment] = None,
     whitespace_before_comment: Optional[str] = None,
-    trailing_whitespace: str = '',
   )
   ```
 
@@ -109,7 +108,7 @@
     [
       null,  // comment
       12.3,
-    ]`
+    ]
     ```
 
     ->
@@ -122,16 +121,16 @@
             value=None,
             whitespace_before="\n  ",
           ),
-          trailing_comma=True,
-          whitespace_after_trailing_comma="  ",
+          comma=True,
           trailing_comment=JSON5Comment("// comment"),
+          whitespace_before_comment="  ",
         ),
         JSON5ArrayMember(
           JSON5Value(JSON5Number(source="10.", value=10.0)),
-          trailing_comma=True,
-          whitespace_after_trailing_comma="\n",
+          comma=True,
         ),
       ],
+      trailing_whitespace="\n"
     )
     ```
 
@@ -202,7 +201,7 @@
             ),
             leading_whitespace=" ",
           ),
-          trailing_comma=True,
+          comma=True,
           whitespace_before_key="\n  ",
         ),
         JSON5ObjectMember(
