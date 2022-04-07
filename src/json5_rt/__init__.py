@@ -79,6 +79,10 @@ class Json5Parser:
 
         return False
 
+    def get_current_content(self) -> str:
+        """Returns the scanned content, without leading or trailing whitespace."""
+        return self.source[self.whitespace_left : self.current]
+
     def parse(self) -> Json5Value:
         """Scans the source to produce a JSON5 CST."""
         value = self.parse_value()
@@ -176,8 +180,8 @@ class Json5Parser:
             self.advance()
 
         value = "".join(unescaped_chars)
-        source = self.source[self.whitespace_left : self.current]
-        return Json5String(source, value, quote_char)
+        content = self.get_current_content()
+        return Json5String(content, value, quote_char)
 
     def parse_number(self) -> Json5Number:
         # TODO: exponent syntax support
@@ -191,8 +195,8 @@ class Json5Parser:
                 while self.peek().isdigit():
                     self.advance()
 
-        source = self.source[self.whitespace_left : self.current]
-        return Json5Number(source, value=float(source))
+        content = self.get_current_content()
+        return Json5Number(content, value=float(content))
 
 
 def parse(source: str) -> Json5Value:
