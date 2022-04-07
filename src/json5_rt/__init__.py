@@ -97,7 +97,7 @@ class Json5Parser:
     def parse_value(self) -> Json5Value:
         """Parse a JSON5 value with whitespace information."""
         # Step 1: Read left whitespace
-        while self.peek() in string.whitespace:
+        while not self.scanned and self.peek() in string.whitespace:
             self.advance()
 
         self.whitespace_left = self.current
@@ -118,6 +118,12 @@ class Json5Parser:
         return value
 
     def parse_data(self) -> Json5Data:
+        if self.scanned:
+            raise Json5ParseError(
+                "Expected to find JSON5 data, found EOF",
+                index=self.current,
+            )
+
         if self.match_next(('"', "'")):
             # TODO: can remove once mypy has better type narrowing
             # ref: https://github.com/python/mypy/issues/12535
