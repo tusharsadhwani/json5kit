@@ -16,6 +16,15 @@ import json5_rt
         ("234.9  ",),
         ("[1, 2, 'abc',]",),
         ("\n[true,]\t\n",),
+        # (
+        #     """
+        #     [
+        #         8.50,
+        #         null,    // why is this here?
+        #         1.34,
+        #     ]
+        #     """,
+        # ),
     ),
 )
 def test_json5_roundtrip(source: str) -> None:
