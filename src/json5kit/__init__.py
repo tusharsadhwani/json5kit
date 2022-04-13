@@ -1,10 +1,10 @@
-"""json5-rt - A roundtrip parser for JSON5."""
+"""json5kit - A Parser and CST for JSON5."""
 from __future__ import annotations
 
 import string
 from typing import Literal, Sequence, cast
 
-from json5_rt.nodes import (
+from json5kit.nodes import (
     Json5Array,
     Json5ArrayMember,
     Json5Boolean,

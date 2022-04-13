@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-import json5_rt
+import json5kit
 
 
 @pytest.mark.parametrize(
@@ -29,4 +29,4 @@ import json5_rt
 )
 def test_json5_roundtrip(source: str) -> None:
     """Tests if a JSON5 snippet can be parsed and roundtripped."""
-    assert json5_rt.parse(source).to_json5() == source
+    assert json5kit.parse(source).to_json5() == source

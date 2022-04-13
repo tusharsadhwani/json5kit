@@ -1,5 +1,5 @@
-# json5-rt
+# json5kit
 
-A roundtrip parser for JSON5.
+A Parser and CST for JSON5.
 
 > Currently a work in progress

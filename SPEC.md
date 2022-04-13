@@ -1,4 +1,4 @@
-# json5-rt CST spec
+# json5kit CST spec
 
 > Currently a work in progress
 
