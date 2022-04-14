@@ -230,6 +230,7 @@ class Json5Parser:
 
     def parse_number(self) -> Json5Number:
         # TODO: exponent syntax support
+        # TODO: Hexadecimal support
         start_index = self.current
 
         while self.peek().isdigit():
