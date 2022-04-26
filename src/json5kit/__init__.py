@@ -8,6 +8,7 @@ from json5kit.nodes import (
     Json5Array,
     Json5ArrayMember,
     Json5Boolean,
+    Json5Comment,
     Json5Data,
     Json5Null,
     Json5Number,
@@ -60,6 +61,14 @@ class Json5Parser:
             return ""
 
         return self.source[self.current + 1]
+
+    def peek_non_whitespace(self) -> str:
+        """Returns the first non-whitespace character."""
+        for char in self.source[self.current :]:
+            if char not in string.whitespace:
+                return char
+
+        return ""
 
     def read_char(self) -> str:
         """
@@ -174,9 +183,24 @@ class Json5Parser:
         raise NotImplementedError(self.source[self.current])
 
     def parse_comment(self) -> None:
-        """Reads and discards a comment. A comment goes on till a newline."""
+        """Reads a comment. A comment goes on till a newline."""
+        start_index = self.current
+
+        while not self.scanned and self.peek() in string.whitespace:
+            self.advance()
+
+        leading_whitespace = self.current
+        self.consume("/")
+        self.consume("/")
+
+        comment_index = self.current
         while not self.scanned and self.peek() != "\n":
             self.advance()
+
+        # Step 4: Make the value
+        whitespace_before_comment = self.source[start_index:leading_whitespace]
+        comment_text = self.source[comment_index : self.current]
+        return Json5Comment(comment_text, whitespace_before_comment)
 
     # def parse_identifier(self) -> Json5Key:
     #     """Scans keywords and variable names."""
@@ -246,20 +270,32 @@ class Json5Parser:
         content = self.source[start_index : self.current]
         return Json5Number(content, value=float(content))
 
-    def parse_array(self) -> Json5Array:
-        items: list[Json5ArrayMember] = []
-        while not self.scanned and not self.match_next("]"):
-            value = self.parse_value()
+    def parse_array_member(self) -> None:
+        value = self.parse_value()
 
-            # Trailing comma not necessary for last element
-            if self.peek() == "]":
-                comma = False
-                break
-
+        # Trailing comma not necessary for last element
+        if self.peek() == "]":
+            comma = False
+        else:
             self.consume(",")
             comma = True
 
-            items.append(Json5ArrayMember(value, comma))
+        whitespace_index = self.current
+        while self.peek() in string.whitespace:
+            self.advance()
+
+        whitespace_after_comma = self.source[whitespace_index : self.current]
+
+        trailing_comments = []
+        while self.peek() == "/":
+            trailing_comments.append(self.parse_comment())
+
+        return Json5ArrayMember(value, comma, whitespace_after_comma, trailing_comments)
+
+    def parse_array(self) -> Json5Array:
+        items: list[Json5ArrayMember] = []
+        while not self.scanned and not self.match_next("]"):
+            items.append(self.parse_array_member())
 
         trailing_whitespace_start = self.current
         while not self.scanned and self.peek() in string.whitespace:

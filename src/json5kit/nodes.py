@@ -10,6 +10,7 @@ class Json5Data(Protocol):
         ...
 
 
+@dataclass
 class Json5Comment:
     comment: str
     whitespace_before_comment: str
@@ -50,6 +51,7 @@ class Json5Number:
 class Json5ArrayMember:
     value: Json5Value
     comma: bool
+    whitespace_after_comma: str
     trailing_comments: list[Json5Comment] = field(default_factory=list)
 
     @property
@@ -58,7 +60,11 @@ class Json5ArrayMember:
         if self.comma:
             value += ","
 
-        return value + "".join(comment.value for comment in self.trailing_comments)
+        return (
+            value
+            + self.whitespace_after_comma
+            + "".join("//" + comment.value for comment in self.trailing_comments)
+        )
 
 
 @dataclass
