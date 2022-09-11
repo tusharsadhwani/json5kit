@@ -19,6 +19,8 @@ from typing import Protocol
 class Json5Node(Protocol):
     """Sets the expectation from a JSON5 node: be able to convert back to source."""
 
+    trailing_trivia_nodes: list[Json5Trivia]
+
     def to_json5(self) -> str:
         ...
 
@@ -67,11 +69,21 @@ class Json5Boolean(Json5Primitive):
         super().__init__(source, value, trailing_trivia_nodes)
 
 
-class Json5Integer(Json5Primitive):
+class Json5Number(Json5Primitive):
     def __init__(
         self,
         source: str,
-        value: int,
+        value: float,
+        trailing_trivia_nodes: list[Json5Trivia],
+    ) -> None:
+        super().__init__(source, value, trailing_trivia_nodes)
+
+
+class Json5String(Json5Primitive):
+    def __init__(
+        self,
+        source: str,
+        value: str,
         trailing_trivia_nodes: list[Json5Trivia],
     ) -> None:
         super().__init__(source, value, trailing_trivia_nodes)
@@ -103,45 +115,70 @@ class Json5Container:
         raise NotImplementedError
 
 
-class Json5Array(Json5Container):
+class Json5File(Json5Container):
     def __init__(
         self,
+        value: Json5Node,
         leading_trivia_nodes: list[Json5Trivia],
         trailing_trivia_nodes: list[Json5Trivia],
     ) -> None:
         super().__init__(leading_trivia_nodes, trailing_trivia_nodes)
-        self.members: list[Json5Node] = []
+        self.value = value
+
+    def to_json5(self) -> str:
+        """Converts the node back to its original source."""
+        return (
+            "".join(trivia.source for trivia in self.leading_trivia_nodes)
+            + self.value.to_json5()
+            + "".join(trivia.source for trivia in self.trailing_trivia_nodes)
+        )
+
+    def to_json(self) -> str:
+        """Converts the node to JSON, without whitespace."""
+        return self.value.to_json()
+
+
+class Json5Array(Json5Container):
+    def __init__(
+        self,
+        members: list[Json5Node],
+        leading_trivia_nodes: list[Json5Trivia],
+        trailing_trivia_nodes: list[Json5Trivia],
+    ) -> None:
+        super().__init__(leading_trivia_nodes, trailing_trivia_nodes)
+        self.members = members
 
     def to_json5(self) -> str:
         """Converts the node back to its original source."""
         return (
             "["
             + "".join(trivia.source for trivia in self.leading_trivia_nodes)
-            + ",".join(member.to_json5() for member in self.members)
+            + "".join(member.to_json5() for member in self.members)
             + "".join(trivia.source for trivia in self.trailing_trivia_nodes)
             + "]"
         )
 
     def to_json(self) -> str:
-        """Converts the node back to its original source."""
+        """Converts the node to JSON, without whitespace."""
         return "[" + ",".join(member.to_json() for member in self.members) + "]"
 
 
 class Json5Object(Json5Container):
     def __init__(
         self,
+        data: dict[Json5Primitive, Json5Primitive],
         leading_trivia_nodes: list[Json5Trivia],
         trailing_trivia_nodes: list[Json5Trivia],
     ) -> None:
         super().__init__(leading_trivia_nodes, trailing_trivia_nodes)
-        self.data: dict[Json5Primitive, Json5Primitive] = {}
+        self.data = data
 
     def to_json5(self) -> str:
         """Converts the node back to its original source."""
         return (
             "{"
             + "".join(trivia.source for trivia in self.leading_trivia_nodes)
-            + ",".join(
+            + "".join(
                 f"{key.to_json5()}:{value.to_json5()}"
                 for key, value in self.data.items()
             )
@@ -150,7 +187,7 @@ class Json5Object(Json5Container):
         )
 
     def to_json(self) -> str:
-        """Converts the node back to its original source."""
+        """Converts the node to JSON, without whitespace."""
         return (
             "{"
             + ",".join(
@@ -177,3 +214,13 @@ class Json5Whitespace(Json5Trivia):
 
 class Json5Newline(Json5Trivia):
     """Newline character in a JSON5 file."""
+
+    def __init__(self) -> None:
+        super().__init__(source="\n")
+
+
+class Json5Comma(Json5Trivia):
+    """Comma character in a JSON5 file"""
+
+    def __init__(self) -> None:
+        super().__init__(source=",")

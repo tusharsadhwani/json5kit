@@ -1,19 +1,23 @@
 """json5kit - A Parser and CST for JSON5."""
 from __future__ import annotations
-
 import string
+
 from typing import Literal, Sequence, cast
 
 from json5kit.nodes import (
     Json5Array,
-    Json5ArrayMember,
     Json5Boolean,
+    Json5Comma,
     Json5Comment,
-    Json5Data,
+    Json5File,
+    Json5Newline,
+    Json5Node,
     Json5Null,
     Json5Number,
+    Json5Primitive,
     Json5String,
-    Json5Value,
+    Json5Trivia,
+    Json5Whitespace,
 )
 
 
@@ -112,95 +116,76 @@ class Json5Parser:
                 index=self.current,
             )
 
-    def parse(self) -> Json5Value:
+    def parse(self) -> Json5File:
         """Scans the source to produce a JSON5 CST."""
-        value = self.parse_value()
+        leading_trivia_nodes = self.parse_trivia()
+        value = self.parse_node()
+        trailing_trivia_nodes = self.parse_trivia()
 
         # Ensure no more data exists
         if not self.scanned:
             token = self.read_char()
             raise Json5ParseError(f"Unexpected {token}", self.current)
 
-        return value
+        return Json5File(value, leading_trivia_nodes, trailing_trivia_nodes)
 
-    def parse_value(self) -> Json5Value:
-        """Parse a JSON5 value with whitespace information."""
-        start_index = self.current
-
-        # Step 1: Read left whitespace
-        while not self.scanned and self.peek() in string.whitespace:
-            self.advance()
-
-        whitespace_left = self.current
-
-        # Step 2: Parse the actual data
-        json_data = self.parse_data()
-
-        # Step 3: Read right whitespace
-        whitespace_right = self.current
-        while not self.scanned and self.peek() in string.whitespace:
-            self.advance()
-
-        # Step 4: Make the value
-        whitespace_before = self.source[start_index:whitespace_left]
-        whitespace_after = self.source[whitespace_right : self.current]
-        value = Json5Value(json_data, whitespace_before, whitespace_after)
-
-        return value
-
-    def parse_data(self) -> Json5Data:
+    def parse_node(self) -> Json5Node:
+        """Returns a parsed JSON5 node."""
         if self.scanned:
             raise Json5ParseError(
                 "Expected to find JSON5 data, found EOF",
                 index=self.current,
             )
 
+        if self.match_next("["):
+            return self.parse_array()
+        # elif self.match_next("{"):
+        #     return self.parse_object()
+        else:
+            return self.parse_primitive()
+
+    def parse_primitive(self) -> Json5Primitive:
+        """Returns a parsed JSON primitive."""
+        node: Json5Primitive
+
         if self.source[self.current : self.current + 4] == "null":
             self.current += 4
-            return Json5Null()
+            node = Json5Null(trailing_trivia_nodes=[])
 
-        if self.source[self.current : self.current + 4] == "true":
+        elif self.source[self.current : self.current + 4] == "true":
             self.current += 4
-            return Json5Boolean(True)
+            node = Json5Boolean(
+                source="true",
+                value=True,
+                trailing_trivia_nodes=[],
+            )
 
-        if self.source[self.current : self.current + 5] == "false":
+        elif self.source[self.current : self.current + 5] == "false":
             self.current += 5
-            return Json5Boolean(False)
+            node = Json5Boolean(
+                source="false",
+                value=False,
+                trailing_trivia_nodes=[],
+            )
 
-        if self.match_next(('"', "'")):
+        elif self.match_next(('"', "'")):
             # TODO: can remove once mypy has better type narrowing
             # ref: https://github.com/python/mypy/issues/12535
             quote_char = cast(Literal['"', "'"], self.previous())
-            return self.parse_string(quote_char)
+            source, string_value = self.parse_string(quote_char)
+            node = Json5String(source, string_value, trailing_trivia_nodes=[])
 
         # TODO: leading decimal?
-        if self.peek() in string.digits:
-            return self.parse_number()
+        elif self.peek() in string.digits:
+            source, float_value = self.parse_number()
+            node = Json5Number(source, float_value, trailing_trivia_nodes=[])
 
-        if self.match_next("["):
-            return self.parse_array()
+        else:
+            raise NotImplementedError(self.source[self.current])
 
-        raise NotImplementedError(self.source[self.current])
-
-    def parse_comment(self) -> None:
-        """Reads a comment. A comment goes on till a newline."""
-        start_index = self.current
-
-        while not self.scanned and self.peek() in string.whitespace:
-            self.advance()
-
-        leading_whitespace = self.current
-        self.consume("/")
-        self.consume("/")
-
-        comment_index = self.current
-        while not self.scanned and self.peek() != "\n":
-            self.advance()
-
-        # Step 4: Make the value
-        whitespace_before_comment = self.source[start_index:leading_whitespace]
-        comment_text = self.source[comment_index : self.current]
-        return Json5Comment(comment_text, whitespace_before_comment)
+        trailing_trivia_nodes = self.parse_trivia()
+        node.trailing_trivia_nodes = trailing_trivia_nodes
+        return node
 
     # def parse_identifier(self) -> Json5Key:
     #     """Scans keywords and variable names."""
@@ -208,7 +193,7 @@ class Json5Parser:
     #     while not self.scanned and (self.peek().isalnum() or self.peek() == "_"):
     #         self.advance()
 
-    def parse_string(self, quote_char: Literal["'", '"']) -> Json5String:
+    def parse_string(self, quote_char: Literal["'", '"']) -> tuple[str, str]:
         # TODO: this is probably not all escapes
         start_index = self.current
         unescaped_chars = []
@@ -250,9 +235,9 @@ class Json5Parser:
 
         value = "".join(unescaped_chars)
         content = quote_char + self.source[start_index : self.current]
-        return Json5String(content, value, quote_char)
+        return content, value
 
-    def parse_number(self) -> Json5Number:
+    def parse_number(self) -> tuple[str, float]:
         # TODO: exponent syntax support
         # TODO: Hexadecimal support
         start_index = self.current
@@ -268,42 +253,64 @@ class Json5Parser:
                     self.advance()
 
         content = self.source[start_index : self.current]
-        return Json5Number(content, value=float(content))
+        return content, float(content)
 
-    def parse_array_member(self) -> None:
-        value = self.parse_value()
+    def parse_array_member(self) -> Json5Node:
+        value = self.parse_node()
 
-        # Trailing comma not necessary for last element
         if self.peek() == "]":
-            comma = False
+            # Trailing comma not necessary for last element
+            pass
         else:
             self.consume(",")
-            comma = True
+            value.trailing_trivia_nodes.append(Json5Comma())
 
-        whitespace_index = self.current
-        while self.peek() in string.whitespace:
-            self.advance()
-
-        whitespace_after_comma = self.source[whitespace_index : self.current]
-
-        trailing_comments = []
-        while self.peek() == "/":
-            trailing_comments.append(self.parse_comment())
-
-        return Json5ArrayMember(value, comma, whitespace_after_comma, trailing_comments)
+        value.trailing_trivia_nodes.extend(self.parse_trivia())
+        return value
 
     def parse_array(self) -> Json5Array:
-        items: list[Json5ArrayMember] = []
+        items: list[Json5Node] = []
+        leading_trivia_nodes = self.parse_trivia()
+
         while not self.scanned and not self.match_next("]"):
             items.append(self.parse_array_member())
 
-        trailing_whitespace_start = self.current
-        while not self.scanned and self.peek() in string.whitespace:
-            self.advance()
+        trailing_trivia_nodes = self.parse_trivia()
+        return Json5Array(items, leading_trivia_nodes, trailing_trivia_nodes)
 
-        trailing_whitespace = self.source[trailing_whitespace_start : self.current]
-        return Json5Array(items, trailing_whitespace)
+    def parse_trivia(self) -> list[Json5Trivia]:
+        """
+        Parses and returns all following Trivia nodes.
+
+        Includes newlines, whitespace, and comments (comments end with newline).
+        """
+        trivia_nodes: list[Json5Trivia] = []
+        while not self.scanned:
+            if self.peek() in string.whitespace:
+                whitespace_start = self.current
+                while not self.scanned and self.peek() in string.whitespace:
+                    self.advance()
+
+                whitespace = self.source[whitespace_start : self.current]
+                trivia_nodes.append(Json5Whitespace(whitespace))
+
+            elif self.match_next("\n"):
+                trivia_nodes.append(Json5Newline())
+
+            elif self.match_next("/"):
+                comment_start = self.current - 1
+                self.consume("/")
+                while not self.scanned and self.peek() != "\n":
+                    self.advance()
+
+                comment = self.source[comment_start : self.current]
+                trivia_nodes.append(Json5Comment(comment))
+
+            else:
+                break
+
+        return trivia_nodes
 
 
-def parse(source: str) -> Json5Value:
+def parse(source: str) -> Json5Node:
     return Json5Parser(source).parse()
