@@ -2,19 +2,6 @@ from __future__ import annotations
 
 from typing import Protocol
 
-# So, here's the new idea: Trivia nodes.
-#
-# Basically everything that is valid JSON data will be part of the node's attributes,
-# but everything else (such as whitespace, newlines, comments, trailing commas) will be
-# in a list of what I'm calling "trivia nodes". Every single json data node (booleans,
-# numbers, etc.) will have a property `trailing_trivia_nodes`, which will list all the
-# trivia nodes found after the said node.
-#
-# There's just one slight thing to take care of: Since there can be whitespace, comments
-# etc. in the beginning of an array/object/file before any of the content, they require
-# different trivia node handling, they'll have a `leading_trivia_nodes` property too.
-# These three nodes I'll be calling "scope" nodes.
-
 
 class Json5Node(Protocol):
     """Sets the expectation from a JSON5 node: be able to convert back to source."""
