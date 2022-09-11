@@ -26,14 +26,14 @@ pip install json5kit
 ... """
 >>> import json5kit
 >>> tree = json5kit.parse(source)
->>> print(tree.to_json5())
+>>> print(tree.to_source())
 
 {
   "items": [1, 2, 4],  // change this to 3
 }
 
 >>> tree.value.data[0][1].members[2] = json5kit.Json5Number('3', 3, [])
->>> print(tree.to_json5())
+>>> print(tree.to_source())
 
 {
   "items": [1, 2, 3],  // change this to 3

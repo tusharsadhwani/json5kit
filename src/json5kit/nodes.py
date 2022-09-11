@@ -9,7 +9,7 @@ class Json5Node(Protocol):
 
     trailing_trivia_nodes: list[Json5Trivia]
 
-    def to_json5(self) -> str:
+    def to_source(self) -> str:
         ...
 
     def to_json(self) -> str:
@@ -29,7 +29,7 @@ class Json5Primitive:
         self.value = value
         self.trailing_trivia_nodes = trailing_trivia_nodes
 
-    def to_json5(self) -> str:
+    def to_source(self) -> str:
         return self.source + "".join(
             trivia.source for trivia in self.trailing_trivia_nodes
         )
@@ -86,9 +86,9 @@ class Json5Key:
         self.value = value
         self.trailing_trivia_nodes = trailing_trivia_nodes
 
-    def to_json5(self) -> str:
+    def to_source(self) -> str:
         return (
-            self.value.to_json5()
+            self.value.to_source()
             + ":"
             + "".join(trivia.source for trivia in self.trailing_trivia_nodes)
         )
@@ -115,7 +115,7 @@ class Json5Container:
         self.leading_trivia_nodes = leading_trivia_nodes
         self.trailing_trivia_nodes = trailing_trivia_nodes
 
-    def to_json5(self) -> str:
+    def to_source(self) -> str:
         """Converts the node back to its original source."""
         raise NotImplementedError
 
@@ -133,11 +133,11 @@ class Json5File(Json5Container):
         super().__init__(leading_trivia_nodes, trailing_trivia_nodes)
         self.value = value
 
-    def to_json5(self) -> str:
+    def to_source(self) -> str:
         """Converts the node back to its original source."""
         return (
             "".join(trivia.source for trivia in self.leading_trivia_nodes)
-            + self.value.to_json5()
+            + self.value.to_source()
             + "".join(trivia.source for trivia in self.trailing_trivia_nodes)
         )
 
@@ -156,12 +156,12 @@ class Json5Array(Json5Container):
         super().__init__(leading_trivia_nodes, trailing_trivia_nodes)
         self.members = members
 
-    def to_json5(self) -> str:
+    def to_source(self) -> str:
         """Converts the node back to its original source."""
         return (
             "["
             + "".join(trivia.source for trivia in self.leading_trivia_nodes)
-            + "".join(member.to_json5() for member in self.members)
+            + "".join(member.to_source() for member in self.members)
             + "]"
             + "".join(trivia.source for trivia in self.trailing_trivia_nodes)
         )
@@ -181,12 +181,14 @@ class Json5Object(Json5Container):
         super().__init__(leading_trivia_nodes, trailing_trivia_nodes)
         self.data = data
 
-    def to_json5(self) -> str:
+    def to_source(self) -> str:
         """Converts the node back to its original source."""
         return (
             "{"
             + "".join(trivia.source for trivia in self.leading_trivia_nodes)
-            + "".join(f"{key.to_json5()}{value.to_json5()}" for key, value in self.data)
+            + "".join(
+                f"{key.to_source()}{value.to_source()}" for key, value in self.data
+            )
             + "}"
             + "".join(trivia.source for trivia in self.trailing_trivia_nodes)
         )
