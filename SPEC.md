@@ -1,6 +1,6 @@
 # json5kit CST spec
 
-> Currently a work in progress
+> This is outdated. It has to be updated.
 
 - comments:
 
@@ -106,9 +106,9 @@
 
   - ```javascript
     [
-      null,  // comment
+      null, // comment
       12.3,
-    ]
+    ];
     ```
 
     ->
