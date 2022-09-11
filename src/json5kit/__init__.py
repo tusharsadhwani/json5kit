@@ -10,10 +10,12 @@ from json5kit.nodes import (
     Json5Comma,
     Json5Comment,
     Json5File,
+    Json5Key,
     Json5Newline,
     Json5Node,
     Json5Null,
     Json5Number,
+    Json5Object,
     Json5Primitive,
     Json5String,
     Json5Trivia,
@@ -139,8 +141,8 @@ class Json5Parser:
 
         if self.match_next("["):
             return self.parse_array()
-        # elif self.match_next("{"):
-        #     return self.parse_object()
+        elif self.match_next("{"):
+            return self.parse_object()
         else:
             return self.parse_primitive()
 
@@ -277,6 +279,41 @@ class Json5Parser:
 
         trailing_trivia_nodes = self.parse_trivia()
         return Json5Array(items, leading_trivia_nodes, trailing_trivia_nodes)
+
+    def parse_object_entry(self) -> tuple[Json5Key, Json5Node]:
+        # TODO: identifier support
+        if not self.match_next(('"', "'")):
+            raise Json5ParseError(f"Expected to find identifier", index=self.current)
+
+        quote_char = cast(Literal['"', "'"], self.previous())
+        source, value = self.parse_string(quote_char)
+        string_trailing_trivia = self.parse_trivia()
+        string_node = Json5String(source, value, string_trailing_trivia)
+
+        self.consume(":")
+        trivia_after_colon = self.parse_trivia()
+        key_node = Json5Key(string_node, trivia_after_colon)
+
+        value_node = self.parse_node()
+        if self.peek() == "}":
+            # Trailing comma not necessary for last element
+            pass
+        else:
+            self.consume(",")
+            value_node.trailing_trivia_nodes.append(Json5Comma())
+
+        value_node.trailing_trivia_nodes.extend(self.parse_trivia())
+        return key_node, value_node
+
+    def parse_object(self) -> Json5Object:
+        items: list[tuple[Json5Key, Json5Node]] = []
+        leading_trivia_nodes = self.parse_trivia()
+
+        while not self.scanned and not self.match_next("}"):
+            items.append(self.parse_object_entry())
+
+        trailing_trivia_nodes = self.parse_trivia()
+        return Json5Object(items, leading_trivia_nodes, trailing_trivia_nodes)
 
     def parse_trivia(self) -> list[Json5Trivia]:
         """

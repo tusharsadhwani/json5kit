@@ -1,4 +1,5 @@
 from __future__ import annotations
+from multiprocessing.sharedctypes import Value
 
 from typing import Protocol
 
@@ -74,6 +75,26 @@ class Json5String(Json5Primitive):
         trailing_trivia_nodes: list[Json5Trivia],
     ) -> None:
         super().__init__(source, value, trailing_trivia_nodes)
+
+
+class Json5Key:
+    def __init__(
+        self,
+        value: Json5String,  # TODO: identifier support
+        trailing_trivia_nodes: list[Json5Trivia],
+    ) -> None:
+        self.value = value
+        self.trailing_trivia_nodes = trailing_trivia_nodes
+
+    def to_json5(self) -> str:
+        return (
+            self.value.to_json5()
+            + ":"
+            + "".join(trivia.source for trivia in self.trailing_trivia_nodes)
+        )
+
+    def to_json(self) -> str:
+        return self.value.to_json() + ":"
 
 
 class Json5Container:
@@ -153,7 +174,7 @@ class Json5Array(Json5Container):
 class Json5Object(Json5Container):
     def __init__(
         self,
-        data: dict[Json5Primitive, Json5Primitive],
+        data: list[tuple[Json5Key, Json5Node]],  # TODO: identifier support
         leading_trivia_nodes: list[Json5Trivia],
         trailing_trivia_nodes: list[Json5Trivia],
     ) -> None:
@@ -165,21 +186,16 @@ class Json5Object(Json5Container):
         return (
             "{"
             + "".join(trivia.source for trivia in self.leading_trivia_nodes)
-            + "".join(
-                f"{key.to_json5()}:{value.to_json5()}"
-                for key, value in self.data.items()
-            )
-            + "".join(trivia.source for trivia in self.trailing_trivia_nodes)
+            + "".join(f"{key.to_json5()}{value.to_json5()}" for key, value in self.data)
             + "}"
+            + "".join(trivia.source for trivia in self.trailing_trivia_nodes)
         )
 
     def to_json(self) -> str:
         """Converts the node to JSON, without whitespace."""
         return (
             "{"
-            + ",".join(
-                f"{key.to_json()}:{value.to_json()}" for key, value in self.data.items()
-            )
+            + ",".join(f"{key.to_json()}{value.to_json()}" for key, value in self.data)
             + "}"
         )
 

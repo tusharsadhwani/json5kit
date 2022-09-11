@@ -39,6 +39,22 @@ import json5kit
               // comment
             """,
         ),
+        ('{  "a" : 1, "b":  true }  ',),
+        (
+            """
+            {  "a" : 
+                        1,
+                    "b":  [  // comment
+                    // comment
+               123  // comment
+                    // comment
+                ,   // comment
+                456  ,
+                // comment
+            ] // comment
+            }
+            """,
+        ),
     ),
 )
 def test_json5_roundtrip(source: str) -> None:
