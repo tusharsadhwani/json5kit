@@ -25,20 +25,20 @@ import json5kit
             ]
             """,
         ),
-        # (
-        #     """
-        #        // comment
-        #        // comment
-        #     [  // comment
-        #        // comment
-        #        "a"  // comment
-        #             // comment
-        #         ,   // comment
-        #         // comment
-        #     ] // comment
-        #       // comment
-        #     """,
-        # ),
+        (
+            """
+               // comment
+               // comment
+            [  // comment
+               // comment
+               "a"  // comment
+                    // comment
+                ,   // comment
+                // comment
+            ] // comment
+              // comment
+            """,
+        ),
     ),
 )
 def test_json5_roundtrip(source: str) -> None:

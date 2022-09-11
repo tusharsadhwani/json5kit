@@ -286,16 +286,16 @@ class Json5Parser:
         """
         trivia_nodes: list[Json5Trivia] = []
         while not self.scanned:
-            if self.peek() in string.whitespace:
+            if self.match_next("\n"):
+                trivia_nodes.append(Json5Newline())
+
+            elif self.peek() in string.whitespace:
                 whitespace_start = self.current
                 while not self.scanned and self.peek() in string.whitespace:
                     self.advance()
 
                 whitespace = self.source[whitespace_start : self.current]
                 trivia_nodes.append(Json5Whitespace(whitespace))
-
-            elif self.match_next("\n"):
-                trivia_nodes.append(Json5Newline())
 
             elif self.match_next("/"):
                 comment_start = self.current - 1

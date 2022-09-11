@@ -154,8 +154,8 @@ class Json5Array(Json5Container):
             "["
             + "".join(trivia.source for trivia in self.leading_trivia_nodes)
             + "".join(member.to_json5() for member in self.members)
-            + "".join(trivia.source for trivia in self.trailing_trivia_nodes)
             + "]"
+            + "".join(trivia.source for trivia in self.trailing_trivia_nodes)
         )
 
     def to_json(self) -> str:
