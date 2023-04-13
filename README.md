@@ -15,9 +15,6 @@ pip install json5kit
 
 ## Usage
 
-> This is not the intended way to use the library. The correct way to modify a
-> tree would be to use visitors, which will be added soon.
-
 ```python
 >>> source = """
 ... {
@@ -34,7 +31,14 @@ pip install json5kit
 
 >>> print(tree.to_json())
 {"items":[1,2,4]}
->>> tree.value.data[0][1].members[2] = json5kit.Json5Number('3', 3, [])
+>>> # Let's replace the `4` with `3` now:
+>>> class ReplaceFourWithThree(json5kit.Json5Transformer):
+...     def visit_Number(self, node):
+...         if node.value == 4:
+...             return node.replace(value=3)
+...         return node
+...
+>>> ReplaceFourWithThree().visit(tree)
 >>> print(tree.to_source())
 
 {

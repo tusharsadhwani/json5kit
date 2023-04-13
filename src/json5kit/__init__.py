@@ -21,6 +21,7 @@ from json5kit.nodes import (
     Json5Trivia,
     Json5Whitespace,
 )
+from json5kit.visitor import Json5Visitor, Json5Transformer
 
 
 class Json5ParseError(Exception):
@@ -351,3 +352,26 @@ class Json5Parser:
 
 def parse(source: str) -> Json5Node:
     return Json5Parser(source).parse()
+
+
+__all__ = [
+    "Json5ParseError",
+    "Json5Array",
+    "Json5Boolean",
+    "Json5Comma",
+    "Json5Comment",
+    "Json5File",
+    "Json5Key",
+    "Json5Newline",
+    "Json5Node",
+    "Json5Null",
+    "Json5Number",
+    "Json5Object",
+    "Json5Primitive",
+    "Json5String",
+    "Json5Trivia",
+    "Json5Whitespace",
+    "Json5Parser",
+    "Json5Visitor",
+    "Json5Transformer",
+]

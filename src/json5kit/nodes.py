@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Protocol, Self, runtime_checkable
 
 
+@runtime_checkable
 class Json5Node(Protocol):
     """Sets the expectation from a JSON5 node: be able to convert back to source."""
 
@@ -36,8 +37,17 @@ class Json5Primitive:
     def to_json(self) -> str:
         return self.source
 
+    def replace(self, value: object) -> Self:
+        # TODO: pass specific source?
+        source = str(value)
+
+        primitive_class = type(self)
+        return primitive_class(source, value, self.trailing_trivia_nodes.copy())
+
 
 class Json5Null(Json5Primitive):
+    value: None
+
     def __init__(self, trailing_trivia_nodes: list[Json5Trivia]) -> None:
         super().__init__(
             source="null",
@@ -47,6 +57,8 @@ class Json5Null(Json5Primitive):
 
 
 class Json5Boolean(Json5Primitive):
+    value: bool
+
     def __init__(
         self,
         source: str,
@@ -57,6 +69,8 @@ class Json5Boolean(Json5Primitive):
 
 
 class Json5Number(Json5Primitive):
+    value: float
+
     def __init__(
         self,
         source: str,
@@ -67,6 +81,8 @@ class Json5Number(Json5Primitive):
 
 
 class Json5String(Json5Primitive):
+    value: str
+
     def __init__(
         self,
         source: str,
@@ -178,7 +194,11 @@ class Json5Object(Json5Container):
         trailing_trivia_nodes: list[Json5Trivia],
     ) -> None:
         super().__init__(leading_trivia_nodes, trailing_trivia_nodes)
-        self.data = data
+        self.keys: list[Json5Key] = []
+        self.values: list[Json5Node] = []
+        for key, value in data:
+            self.keys.append(key)
+            self.values.append(value)
 
     def to_source(self) -> str:
         """Converts the node back to its original source."""
@@ -186,7 +206,8 @@ class Json5Object(Json5Container):
             "{"
             + "".join(trivia.source for trivia in self.leading_trivia_nodes)
             + "".join(
-                f"{key.to_source()}{value.to_source()}" for key, value in self.data
+                f"{key.to_source()}{value.to_source()}"
+                for key, value in zip(self.keys, self.values)
             )
             + "}"
             + "".join(trivia.source for trivia in self.trailing_trivia_nodes)
@@ -196,7 +217,10 @@ class Json5Object(Json5Container):
         """Converts the node to JSON, without whitespace."""
         return (
             "{"
-            + ",".join(f"{key.to_json()}{value.to_json()}" for key, value in self.data)
+            + ",".join(
+                f"{key.to_json()}{value.to_json()}"
+                for key, value in zip(self.keys, self.values)
+            )
             + "}"
         )
 
@@ -204,8 +228,16 @@ class Json5Object(Json5Container):
 class Json5Trivia:
     """Base class for "trivial" information like whitespace, newlines and comments."""
 
+    trailing_trivia_nodes = ()
+
     def __init__(self, source: str) -> None:
         self.source = source
+
+    def to_source(self) -> str:
+        return self.source
+
+    def to_json(self) -> str:
+        return self.source
 
 
 class Json5Comment(Json5Trivia):
