@@ -1,8 +1,15 @@
 """json5kit - A Parser and CST for JSON5."""
 from __future__ import annotations
 import string
+import sys
 
-from typing import Literal, Sequence, cast
+from typing import Sequence, cast
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
+
 
 from json5kit.nodes import (
     Json5Array,
