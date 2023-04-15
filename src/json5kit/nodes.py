@@ -1,8 +1,13 @@
 from __future__ import annotations
 import sys
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Self
+
 if sys.version_info >= (3, 8):
-    from typing import Protocol, Self, runtime_checkable
+    from typing import Protocol, runtime_checkable
 else:
     from typing_extensions import Protocol, Self, runtime_checkable
 
@@ -41,7 +46,7 @@ class Json5Primitive:
     def to_json(self) -> str:
         return self.source
 
-    def replace(self, value: object) -> Self:
+    def replace(self, value: object) -> "Self":
         # TODO: pass specific source?
         source = str(value)
 
