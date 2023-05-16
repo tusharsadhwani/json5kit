@@ -131,7 +131,7 @@ def test_json5_visitor_transformer() -> None:
         ),
     ),
 )
-def test_json5_to_json(source, json) -> None:
+def test_json5_to_json(source: str, json: str) -> None:
     """Tests to ensure JSON5 features are parsed and converted to JSON properly."""
     assert json5kit.parse(source).to_source() == source
     assert json5kit.parse(source).to_json() == json

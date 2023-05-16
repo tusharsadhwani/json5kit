@@ -297,6 +297,8 @@ class Json5Parser:
         return Json5Array(items, leading_trivia_nodes, trailing_trivia_nodes)
 
     def parse_object_entry(self) -> tuple[Json5Key, Json5Node]:
+        key_value_node: Json5String | Json5Identifier
+
         if self.peek().isalpha() or self.peek() == "_":
             source = self.parse_identifier()
             trailing_trivia = self.parse_trivia()
