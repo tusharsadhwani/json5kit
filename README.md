@@ -2,9 +2,10 @@
 
 A Roundtrip parser and CST for JSON, JSONC and JSON5.
 
-> Currently a work in progress
+[JSON5](https://json5.org) is a superset of JSON, that allows trailing commas,
+comments, unquoted and single-quoted object keys, and a lot more.
 
-Currently supports parsing all of JSON syntax, and converting it back to source.
+Currently supports parsing most JSON5 syntax, and converting it back to source.
 Also supports single line `// comments`.
 
 ## Installation
@@ -18,7 +19,7 @@ pip install json5kit
 ```python
 >>> source = """
 ... {
-...   "items": [1, 2, 4],  // change this to 3
+...   items: [1, 2, 4],  // change this to 3
 ... }
 ... """
 >>> import json5kit
@@ -26,11 +27,12 @@ pip install json5kit
 >>> print(tree.to_source())
 
 {
-  "items": [1, 2, 4],  // change this to 3
+  items: [1, 2, 4],  // change this to 3
 }
 
 >>> print(tree.to_json())
 {"items":[1,2,4]}
+
 >>> # Let's replace the `4` with `3` now:
 >>> class ReplaceFourWithThree(json5kit.Json5Transformer):
 ...     def visit_Number(self, node):
@@ -42,7 +44,7 @@ pip install json5kit
 >>> print(tree.to_source())
 
 {
-  "items": [1, 2, 3],  // change this to 3
+  items: [1, 2, 3],  // change this to 3
 }
 >>> print(tree.to_json())
 {"items":[1,2,3]}
