@@ -17,6 +17,7 @@ from json5kit.nodes import (
     Json5Comma,
     Json5Comment,
     Json5File,
+    Json5Identifier,
     Json5Key,
     Json5Newline,
     Json5Node,
@@ -197,11 +198,18 @@ class Json5Parser:
         node.trailing_trivia_nodes = trailing_trivia_nodes
         return node
 
-    # def parse_identifier(self) -> Json5Key:
-    #     """Scans keywords and variable names."""
-    #     # TODO: not full ECMA syntax
-    #     while not self.scanned and (self.peek().isalnum() or self.peek() == "_"):
-    #         self.advance()
+    def parse_identifier(self) -> str:
+        """
+        Scans keywords and variable names.
+        It doesn't check for the first letter being a non-number because the call-site
+        already confirms that.
+        """
+        # TODO: not full ECMA syntax
+        start_index = self.current
+        while not self.scanned and (self.peek().isalnum() or self.peek() == "_"):
+            self.advance()
+        identifier = self.source[start_index : self.current]
+        return identifier
 
     def parse_string(self, quote_char: Literal["'", '"']) -> tuple[str, str]:
         # TODO: this is probably not all escapes
@@ -289,18 +297,25 @@ class Json5Parser:
         return Json5Array(items, leading_trivia_nodes, trailing_trivia_nodes)
 
     def parse_object_entry(self) -> tuple[Json5Key, Json5Node]:
-        # TODO: identifier support
-        if not self.match_next(('"', "'")):
-            raise Json5ParseError(f"Expected to find identifier", index=self.current)
+        key_value_node: Json5String | Json5Identifier
 
-        quote_char = cast(Literal['"', "'"], self.previous())
-        source, value = self.parse_string(quote_char)
-        string_trailing_trivia = self.parse_trivia()
-        string_node = Json5String(source, value, string_trailing_trivia)
+        if self.peek().isalpha() or self.peek() == "_":
+            source = self.parse_identifier()
+            trailing_trivia = self.parse_trivia()
+            key_value_node = Json5Identifier(source, trailing_trivia)
+
+        elif self.match_next(('"', "'")):
+            quote_char = cast(Literal['"', "'"], self.previous())
+            source, value = self.parse_string(quote_char)
+            trailing_trivia = self.parse_trivia()
+            key_value_node = Json5String(source, value, trailing_trivia)
+
+        else:
+            raise Json5ParseError(f"Expected to find identifier", index=self.current)
 
         self.consume(":")
         trivia_after_colon = self.parse_trivia()
-        key_node = Json5Key(string_node, trivia_after_colon)
+        key_node = Json5Key(key_value_node, trivia_after_colon)
 
         value_node = self.parse_node()
         if self.peek() == "}":
