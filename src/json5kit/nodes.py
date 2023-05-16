@@ -100,11 +100,33 @@ class Json5String(Json5Primitive):
     ) -> None:
         super().__init__(source, value, trailing_trivia_nodes)
 
+    def to_json(self) -> str:
+        if self.source.startswith("'"):
+            unquoted_source = self.source[1:-1]
+            return f'"{unquoted_source}"'
+
+        return self.source
+
+
+class Json5Identifier(Json5Primitive):
+    value: str
+
+    def __init__(
+        self,
+        source: str,
+        trailing_trivia_nodes: list[Json5Trivia],
+    ) -> None:
+        # the value is the same as the source
+        super().__init__(source, source, trailing_trivia_nodes)
+
+    def to_json(self) -> str:
+        return f'"{self.source}"'
+
 
 class Json5Key:
     def __init__(
         self,
-        value: Json5String,  # TODO: identifier support
+        value: Json5String | Json5Identifier,
         trailing_trivia_nodes: list[Json5Trivia],
     ) -> None:
         self.value = value

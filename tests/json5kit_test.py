@@ -110,3 +110,28 @@ def test_json5_visitor_transformer() -> None:
     # The original tree changes as well.
     assert tree.to_source() == expected_source
     assert tree.to_json() == expected_json
+
+
+@pytest.mark.parametrize(
+    ("source", "json"),
+    (
+        (
+            """
+            {
+                foo: "bar", // test
+                barBaz_buzz1: // another comment
+                    [
+                        "stuff",
+                        'other stuff',
+                    ],
+                'more keys': null, // heh
+            }
+            """,
+            '{"foo":"bar","barBaz_buzz1":["stuff","other stuff"],"more keys":null}',
+        ),
+    ),
+)
+def test_json5_to_json(source, json) -> None:
+    """Tests to ensure JSON5 features are parsed and converted to JSON properly."""
+    assert json5kit.parse(source).to_source() == source
+    assert json5kit.parse(source).to_json() == json
