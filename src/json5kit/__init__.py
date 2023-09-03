@@ -32,7 +32,7 @@ from json5kit.nodes import (
 from json5kit.visitor import Json5Visitor, Json5Transformer
 
 
-def index_to_line_column(index: int, source: str) -> tuple[str, str]:
+def index_to_line_column(index: int, source: str) -> tuple[int, int]:
     """Converts the tokenizer index into a line and column for the error."""
     line, column = 1, 0
     for char in source[:index]:
