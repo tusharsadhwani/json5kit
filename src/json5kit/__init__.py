@@ -132,6 +132,7 @@ class Json5Parser:
             raise Json5ParseError(
                 f"Expected to find '{char}', found EOF",
                 index=self.current,
+                source=self.source,
             )
 
         current_char = self.read_char()
