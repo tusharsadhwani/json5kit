@@ -32,12 +32,26 @@ from json5kit.nodes import (
 from json5kit.visitor import Json5Visitor, Json5Transformer
 
 
+def index_to_line_column(index: int, source: str) -> tuple[str, str]:
+    """Converts the tokenizer index into a line and column for the error."""
+    line, column = 1, 0
+    for char in source[:index]:
+        if char == "\n":
+            line += 1
+            column = 0
+        else:
+            column += 1
+
+    return line, column
+
+
 class Json5ParseError(Exception):
     """Raised when the JSON5 string has bad syntax."""
 
-    def __init__(self, message: str, index: int) -> None:
-        super().__init__(message)
+    def __init__(self, message: str, index: int, source: str) -> None:
         self.index = index
+        self.line, self.column = index_to_line_column(self.index, source)
+        super().__init__(f"at {self.line}:{self.column}: {message}")
 
 
 class Json5Parser:
@@ -125,6 +139,7 @@ class Json5Parser:
             raise Json5ParseError(
                 f"Expected to find '{char}', found '{current_char}'",
                 index=self.current,
+                source=self.source,
             )
 
     def parse(self) -> Json5File:
@@ -136,7 +151,7 @@ class Json5Parser:
         # Ensure no more data exists
         if not self.scanned:
             token = self.read_char()
-            raise Json5ParseError(f"Unexpected {token}", self.current)
+            raise Json5ParseError(f"Unexpected {token}", self.current, self.source)
 
         return Json5File(value, leading_trivia_nodes, trailing_trivia_nodes)
 
@@ -146,6 +161,7 @@ class Json5Parser:
             raise Json5ParseError(
                 "Expected to find JSON5 data, found EOF",
                 index=self.current,
+                source=self.source,
             )
 
         if self.match_next("["):
@@ -225,7 +241,9 @@ class Json5Parser:
             # Escaping the next character
             next_char = self.peek()
             if next_char == "":
-                raise Json5ParseError("Unterminated string", index=start_index)
+                raise Json5ParseError(
+                    "Unterminated string", index=start_index, source=self.source
+                )
 
             if next_char == "\n":
                 pass  # trailing backslash means ignore the newline
@@ -244,6 +262,7 @@ class Json5Parser:
                 raise Json5ParseError(
                     f"Unknown escape sequence: '{escape}'",
                     index=self.current,
+                    source=self.source,
                 )
 
             self.advance()
@@ -311,7 +330,11 @@ class Json5Parser:
             key_value_node = Json5String(source, value, trailing_trivia)
 
         else:
-            raise Json5ParseError(f"Expected to find identifier", index=self.current)
+            raise Json5ParseError(
+                f"Expected to find identifier",
+                index=self.current,
+                source=self.source,
+            )
 
         self.consume(":")
         trivia_after_colon = self.parse_trivia()
