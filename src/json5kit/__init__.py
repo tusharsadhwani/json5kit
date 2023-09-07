@@ -280,9 +280,9 @@ class Json5Parser:
         # TODO: Hexadecimal support
         start_index = self.current
         if self.peek() in ("+","-"):
-            start_index = self.current
             self.advance()
 
+        
         while self.peek().isdigit():
             self.advance()
 
