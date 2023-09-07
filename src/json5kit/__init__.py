@@ -204,7 +204,7 @@ class Json5Parser:
             node = Json5String(source, string_value, trailing_trivia_nodes=[])
 
         # TODO: leading decimal?
-        elif self.peek() in string.digits or self.peek() in ('+','-'):
+        elif self.peek() in string.digits or self.peek() in ("+", "-"):
             source, float_value = self.parse_number()
             node = Json5Number(source, float_value, trailing_trivia_nodes=[])
 
@@ -279,8 +279,7 @@ class Json5Parser:
         # TODO: exponent syntax support
         # TODO: Hexadecimal support
         start_index = self.current
-        if self.peek() in ("+","-"):
-            start_index = self.current
+        if self.peek() in ("+", "-"):
             self.advance()
 
         while self.peek().isdigit():
