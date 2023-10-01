@@ -279,7 +279,7 @@ class Json5Parser:
         # TODO: exponent syntax support
         # TODO: Hexadecimal support
         start_index = self.current
-        if self.peek() in ("+","-"):
+        if self.peek() in ("+", "-"):
             self.advance()
 
         while self.peek().isdigit():
