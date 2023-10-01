@@ -282,7 +282,6 @@ class Json5Parser:
         if self.peek() in ("+","-"):
             self.advance()
 
-        
         while self.peek().isdigit():
             self.advance()
 
